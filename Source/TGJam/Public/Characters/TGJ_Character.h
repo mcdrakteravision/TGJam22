@@ -6,6 +6,9 @@
 #include "GameFramework/Character.h"
 #include "TGJ_Character.generated.h"
 
+class UCameraComponent;
+class USpringArmComponent;
+
 UCLASS()
 class TGJAM_API ATGJ_Character : public ACharacter
 {
@@ -16,13 +19,20 @@ public:
 	ATGJ_Character();
 
 protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
+	/** Top down camera */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
+	UCameraComponent* TopDownCameraComponent;
+
+	/** Camera boom positioning the camera above the character */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
+	USpringArmComponent* CameraBoom;
 
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	// Called to bind functionality to input
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	/** Returns TopDownCameraComponent subobject **/
+	FORCEINLINE UCameraComponent* GetTopDownCameraComponent() const { return TopDownCameraComponent; }
+	/** Returns CameraBoom subobject **/
+	FORCEINLINE USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 };
