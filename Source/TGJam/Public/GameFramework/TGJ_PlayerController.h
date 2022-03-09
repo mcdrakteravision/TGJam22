@@ -16,17 +16,16 @@ public:
 
 protected:
 	/** True if the controlled character should navigate to the mouse cursor. */
-	uint32 bMoveToMouseCursor : 1;
-
-	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = "OnRep_LastCursorLocation")
-	FVector LastCursorLocation;
+	UPROPERTY(BlueprintReadOnly)
+	uint8 bMoveToCursor : 1;
 
 	// Begin PlayerController interface
-	virtual void PlayerTick(float DeltaTime) override;
+	virtual void Tick(float DeltaTime) override;
 	virtual void SetupInputComponent() override;
 	// End PlayerController interface
 
 	/** Navigate player to the current mouse cursor location. */
+	UFUNCTION(BlueprintCallable)
 	void MoveToMouseCursor();
 	
 	/** Navigate player to the given world location. */
@@ -36,6 +35,6 @@ protected:
 	void OnSetDestinationPressed();
 	void OnSetDestinationReleased();
 
-	UFUNCTION()
-	void OnRep_LastCursorLocation(const FVector& OldLastCursorLocation);
+	UFUNCTION(Server, Unreliable)
+	void Server_SetLastCursorLocation(const FVector& LastCursorLocation);
 };
