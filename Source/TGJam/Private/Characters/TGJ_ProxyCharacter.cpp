@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Characters/TGJ_Character.h"
+#include "Characters/TGJ_ProxyCharacter.h"
 
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -10,7 +10,7 @@
 
 //=================================================================================================================
 // Sets default values
-ATGJ_Character::ATGJ_Character()
+ATGJ_ProxyCharacter::ATGJ_ProxyCharacter()
 {
 	// Set size for player capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
@@ -46,7 +46,7 @@ ATGJ_Character::ATGJ_Character()
 
 //=================================================================================================================
 // Called every frame
-void ATGJ_Character::Tick(float DeltaTime)
+void ATGJ_ProxyCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 }
