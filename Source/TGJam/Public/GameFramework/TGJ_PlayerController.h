@@ -6,6 +6,9 @@
 #include "GameFramework/PlayerController.h"
 #include "TGJ_PlayerController.generated.h"
 
+class ATGJ_ProxyCharacter;
+class ATGJ_AIProxyController;
+
 UCLASS()
 class TGJAM_API ATGJ_PlayerController : public APlayerController
 {
@@ -16,25 +19,34 @@ public:
 
 protected:
 	/** True if the controlled character should navigate to the mouse cursor. */
-	UPROPERTY(BlueprintReadOnly)
 	uint8 bMoveToCursor : 1;
 
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Properties")
+	TSubclassOf<ATGJ_ProxyCharacter> ProxyCharacterSubclass;
+
+	UPROPERTY()
+	ATGJ_ProxyCharacter* ProxyCharacterReference;
+
+	UPROPERTY()
+	ATGJ_AIProxyController* ProxyControllerReference;
+
+	FTimerHandle MouseMovementTimerHandle;
+
 	// Begin PlayerController interface
+	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupInputComponent() override;
 	// End PlayerController interface
-
-	/** Navigate player to the current mouse cursor location. */
-	UFUNCTION(BlueprintCallable)
-	void MoveToMouseCursor();
-	
-	/** Navigate player to the given world location. */
-	void SetNewMoveDestination(const FVector DestLocation);
 
 	/** Input handlers for SetDestination action. */
 	void OnSetDestinationPressed();
 	void OnSetDestinationReleased();
 
-	UFUNCTION(Server, Unreliable)
+	void SetupProxyCharacterSpawning();
+
+	UFUNCTION()
+	void OnMouseMovedWhilePressed();
+
+	UFUNCTION(Server, Reliable)
 	void Server_SetLastCursorLocation(const FVector& LastCursorLocation);
 };

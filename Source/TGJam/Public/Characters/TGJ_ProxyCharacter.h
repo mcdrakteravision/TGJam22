@@ -4,19 +4,19 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "TGJ_Character.generated.h"
+#include "TGJ_ProxyCharacter.generated.h"
 
 class UCameraComponent;
 class USpringArmComponent;
 
 UCLASS()
-class TGJAM_API ATGJ_Character : public ACharacter
+class TGJAM_API ATGJ_ProxyCharacter : public ACharacter
 {
 	GENERATED_BODY()
 
 public:
 	// Sets default values for this character's properties
-	ATGJ_Character();
+	ATGJ_ProxyCharacter();
 
 protected:
 	/** Top down camera */
