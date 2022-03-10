@@ -6,9 +6,6 @@
 #include "GameFramework/Character.h"
 #include "TGJ_ProxyCharacter.generated.h"
 
-class UCameraComponent;
-class USpringArmComponent;
-
 UCLASS()
 class TGJAM_API ATGJ_ProxyCharacter : public ACharacter
 {
@@ -18,21 +15,9 @@ public:
 	// Sets default values for this character's properties
 	ATGJ_ProxyCharacter();
 
-protected:
-	/** Top down camera */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
-	UCameraComponent* TopDownCameraComponent;
-
-	/** Camera boom positioning the camera above the character */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
-	USpringArmComponent* CameraBoom;
+	void UpdateControllerLocationToGo(const FVector& LocationToGo) const;
 
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-
-	/** Returns TopDownCameraComponent subobject **/
-	FORCEINLINE UCameraComponent* GetTopDownCameraComponent() const { return TopDownCameraComponent; }
-	/** Returns CameraBoom subobject **/
-	FORCEINLINE USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 };
