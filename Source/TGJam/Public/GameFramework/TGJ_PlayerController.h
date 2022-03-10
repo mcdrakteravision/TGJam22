@@ -24,16 +24,16 @@ protected:
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Properties")
 	TSubclassOf<ATGJ_ProxyCharacter> ProxyCharacterSubclass;
 
-	UPROPERTY()
+	UPROPERTY(BlueprintReadOnly, Replicated)
 	ATGJ_ProxyCharacter* ProxyCharacterReference;
-
-	UPROPERTY()
-	ATGJ_AIProxyController* ProxyControllerReference;
 
 	FTimerHandle MouseMovementTimerHandle;
 
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Properties")
+	float MouseMovementInterpolationSpeed;
+
 	// Begin PlayerController interface
-	virtual void BeginPlay() override;
+	virtual void OnPossess(APawn* aPawn) override;
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupInputComponent() override;
 	// End PlayerController interface
@@ -49,4 +49,6 @@ protected:
 
 	UFUNCTION(Server, Reliable)
 	void Server_SetLastCursorLocation(const FVector& LastCursorLocation);
+
+	void UpdateLocationAccordingToProxy(const float DeltaTime);
 };

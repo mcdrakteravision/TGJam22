@@ -13,5 +13,7 @@ UCLASS()
 class TGJAM_API ATGJ_AIProxyController : public AAIController
 {
 	GENERATED_BODY()
-	
+
+public:
+	void SetLocationToMove(const FVector& LocationToMove);
 };

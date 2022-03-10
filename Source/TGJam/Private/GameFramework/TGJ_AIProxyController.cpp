@@ -3,3 +3,8 @@
 
 #include "GameFramework/TGJ_AIProxyController.h"
 
+//=================================================================================================================
+void ATGJ_AIProxyController::SetLocationToMove(const FVector& LocationToMove)
+{
+	MoveToLocation(LocationToMove);
+}

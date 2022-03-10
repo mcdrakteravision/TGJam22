@@ -5,6 +5,7 @@
 
 #include "Blueprint/AIBlueprintHelperLibrary.h"
 #include "Characters/TGJ_ProxyCharacter.h"
+#include "Kismet/KismetMathLibrary.h"
 #include "Net/UnrealNetwork.h"
 
 //=================================================================================================================
@@ -12,12 +13,14 @@ ATGJ_PlayerController::ATGJ_PlayerController()
 {
 	bShowMouseCursor = true;
 	DefaultMouseCursor = EMouseCursor::Default;
+
+	MouseMovementInterpolationSpeed = 10.f;
 }
 
 //=================================================================================================================
-void ATGJ_PlayerController::BeginPlay()
+void ATGJ_PlayerController::OnPossess(APawn* aPawn)
 {
-	Super::BeginPlay();
+	Super::OnPossess(aPawn);
 
 	if(HasAuthority())
 	{
@@ -29,6 +32,16 @@ void ATGJ_PlayerController::BeginPlay()
 void ATGJ_PlayerController::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	UpdateLocationAccordingToProxy(DeltaTime);
+}
+
+//=================================================================================================================
+void ATGJ_PlayerController::GetLifetimeReplicatedProps( TArray< class FLifetimeProperty > & OutLifetimeProps ) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ATGJ_PlayerController, ProxyCharacterReference);
 }
 
 //=================================================================================================================
@@ -72,7 +85,9 @@ void ATGJ_PlayerController::SetupProxyCharacterSpawning()
 		return;
 	}
 
-	ProxyCharacterReference = GetWorld()->SpawnActor<ATGJ_ProxyCharacter>(ProxyCharacterSubclass, GetPawn()->GetActorLocation(), GetPawn()->GetActorRotation());
+	FActorSpawnParameters SpawnParameters;
+	SpawnParameters.Instigator = GetPawn();
+	ProxyCharacterReference = GetWorld()->SpawnActor<ATGJ_ProxyCharacter>(ProxyCharacterSubclass, GetPawn()->GetActorLocation(), GetPawn()->GetActorRotation(), SpawnParameters);
 }
 
 //=================================================================================================================
@@ -94,12 +109,28 @@ void ATGJ_PlayerController::OnMouseMovedWhilePressed()
 	if ((Distance > 120.0f))
 	{
 		Server_SetLastCursorLocation(Hit.Location);
-		UAIBlueprintHelperLibrary::SimpleMoveToLocation(this, Hit.Location);
 	}
+}
+
+//=================================================================================================================
+void ATGJ_PlayerController::UpdateLocationAccordingToProxy(const float DeltaTime)
+{
+	if(!IsValid(ProxyCharacterReference) || !IsValid(GetPawn()))
+	{
+		return;
+	}
+
+	const FVector InterpolatedLocation = UKismetMathLibrary::VInterpTo(GetPawn()->GetActorLocation(), ProxyCharacterReference->GetActorLocation(), DeltaTime, MouseMovementInterpolationSpeed);
+	GetPawn()->SetActorLocation(InterpolatedLocation);
 }
 
 //=================================================================================================================
 void ATGJ_PlayerController::Server_SetLastCursorLocation_Implementation(const FVector& LastCursorLocation)
 {
-	UAIBlueprintHelperLibrary::SimpleMoveToLocation(this, LastCursorLocation);
+	if(!IsValid(ProxyCharacterReference))
+	{
+		return;
+	}
+
+	ProxyCharacterReference->UpdateControllerLocationToGo(LastCursorLocation);
 }
