@@ -3,8 +3,11 @@
 
 #include "Pawns/TGJ_PlayerPawn.h"
 
+#include "AbilitySystemComponent.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "GameplayAbilitySystem/TGJ_AttributeSet.h"
+#include "GameplayAbilitySystem/TGJ_GameplayAbility.h"
 
 //=================================================================================================================
 // Sets default values
@@ -33,6 +36,16 @@ ATGJ_PlayerPawn::ATGJ_PlayerPawn()
 	TopDownCameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("TopDownCamera"));
 	TopDownCameraComponent->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	TopDownCameraComponent->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
+
+	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
+	AbilitySystemComponent->ReplicationMode = EGameplayEffectReplicationMode::Full;
+	AbilitySystemComponent->SetIsReplicated(true);
+
+	AttributeSet = CreateDefaultSubobject<UTGJ_AttributeSet>(TEXT("AttributSet"));
+
+	bWereAbilitiesGiven = false;
+	bWereEffectsGiven = false;
+	bGASInputsBound = false;
 }
 
 //=================================================================================================================
@@ -40,6 +53,74 @@ ATGJ_PlayerPawn::ATGJ_PlayerPawn()
 void ATGJ_PlayerPawn::BeginPlay()
 {
 	Super::BeginPlay();
+}
+
+//=================================================================================================================
+void ATGJ_PlayerPawn::PossessedBy(AController* NewController)
+{
+	Super::PossessedBy(NewController);
+
+	if(IsValid(AbilitySystemComponent))
+	{
+		SetupStartingAbilities();
+		SetupStartingEffects();
+
+		AbilitySystemComponent->InitAbilityActorInfo(this, this);
+	}
+}
+
+//=================================================================================================================
+void ATGJ_PlayerPawn::SetupStartingAbilities()
+{
+	if(!HasAuthority() || !IsValid(AbilitySystemComponent) || StartingAbilities.Num() <= 0 || bWereAbilitiesGiven)
+	{
+		return;
+	}
+
+	for (TSubclassOf<UTGJ_GameplayAbility>& StartupAbility : StartingAbilities)
+	{
+		if (IsValid(StartupAbility))
+		{
+			AbilitySystemComponent->GiveAbility(
+				FGameplayAbilitySpec(StartupAbility, 1.f, static_cast<int32>(StartupAbility.GetDefaultObject()->AbilityInputID), this));
+		}
+	}
+
+	bWereAbilitiesGiven = true;
+}
+
+//=================================================================================================================
+void ATGJ_PlayerPawn::SetupStartingEffects()
+{
+	if(!HasAuthority() || !IsValid(AbilitySystemComponent) || StartingEffects.Num() <= 0 || bWereEffectsGiven)
+	{
+		return;
+	}
+
+	FGameplayEffectContextHandle EffectContext = AbilitySystemComponent->MakeEffectContext();
+	EffectContext.AddSourceObject(this);
+
+	for (const TSubclassOf<UGameplayEffect> CurrentGameplayEffect : StartingEffects)
+	{
+		FGameplayEffectSpecHandle NewHandle = AbilitySystemComponent->MakeOutgoingSpec(CurrentGameplayEffect, 1.f, EffectContext);
+		if (NewHandle.IsValid())
+		{
+			AbilitySystemComponent->ApplyGameplayEffectSpecToTarget(*NewHandle.Data.Get(), AbilitySystemComponent);
+		}
+	}
+
+	bWereEffectsGiven = true;
+}
+
+//=================================================================================================================
+void ATGJ_PlayerPawn::SetupGASInputs()
+{
+	if(!IsValid(AbilitySystemComponent) || !IsValid(InputComponent) || bGASInputsBound)
+	{
+		return;
+	}
+
+	AbilitySystemComponent->BindAbilityActivationToInputComponent(InputComponent, FGameplayAbilityInputBinds(FString("Confirm"), FString("Cancel"), FString("ETGJ_AbilityInputID"), static_cast<int32>(ETGJ_AbilityInput::Confirm), static_cast<int32>(ETGJ_AbilityInput::Cancel)));
 }
 
 //=================================================================================================================
@@ -54,5 +135,7 @@ void ATGJ_PlayerPawn::Tick(float DeltaTime)
 void ATGJ_PlayerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
+
+	SetupGASInputs();
 }
 

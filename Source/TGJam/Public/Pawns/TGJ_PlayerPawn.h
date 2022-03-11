@@ -3,15 +3,20 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "AbilitySystemInterface.h"
 #include "GameFramework/Pawn.h"
 #include "TGJ_PlayerPawn.generated.h"
 
 class UCameraComponent;
 class USpringArmComponent;
 class USceneComponent;
+class UAbilitySystemComponent;
+class UTGJ_AttributeSet;
+class UTGJ_GameplayAbility;
+class UGameplayEffect;
 
 UCLASS()
-class TGJAM_API ATGJ_PlayerPawn : public APawn
+class TGJAM_API ATGJ_PlayerPawn : public APawn, public IAbilitySystemInterface
 {
 	GENERATED_BODY()
 
@@ -31,8 +36,35 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components)
 	USceneComponent* RootSceneComponent;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components)
+	UAbilitySystemComponent* AbilitySystemComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components)
+	UTGJ_AttributeSet* AttributeSet;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GameplayAbilities")
+	TArray<TSubclassOf<UTGJ_GameplayAbility>> StartingAbilities;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GameplayAbilities")
+	TArray<TSubclassOf<UGameplayEffect>> StartingEffects;
+
+	uint8 bWereAbilitiesGiven : 1;
+
+	uint8 bWereEffectsGiven : 1;
+
+	uint8 bGASInputsBound : 1;
+
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	/** Controller possession delegate */
+	virtual void PossessedBy(AController* NewController) override;
+
+	void SetupStartingAbilities();
+
+	void SetupStartingEffects();
+
+	void SetupGASInputs();
 
 public:	
 	// Called every frame
@@ -45,4 +77,7 @@ public:
 	FORCEINLINE UCameraComponent* GetTopDownCameraComponent() const { return TopDownCameraComponent; }
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
+
+	/** Returns the ability system component to use for this actor. It may live on another actor, such as a Pawn using the PlayerState's component */
+	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponent; };
 };
