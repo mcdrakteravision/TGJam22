@@ -3,10 +3,13 @@
 
 #include "GameFramework/TGJ_PlayerController.h"
 
+#include "AbilitySystemComponent.h"
 #include "Blueprint/AIBlueprintHelperLibrary.h"
 #include "Characters/TGJ_ProxyCharacter.h"
+#include "GameFramework/TGJ_PlayerState.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Net/UnrealNetwork.h"
+#include "Pawns/TGJ_PlayerPawn.h"
 
 //=================================================================================================================
 ATGJ_PlayerController::ATGJ_PlayerController()
@@ -25,6 +28,15 @@ void ATGJ_PlayerController::OnPossess(APawn* aPawn)
 	if(HasAuthority())
 	{
 		SetupProxyCharacterSpawning();
+	}
+
+	ATGJ_PlayerState* MyPlayerState = GetPlayerState<ATGJ_PlayerState>();
+	if(IsValid(MyPlayerState))
+	{
+		if(IsValid(MyPlayerState->GetAbilitySystemComponent()))
+		{
+			MyPlayerState->GetAbilitySystemComponent()->InitAbilityActorInfo(MyPlayerState, aPawn);
+		}
 	}
 }
 
@@ -51,6 +63,12 @@ void ATGJ_PlayerController::SetupInputComponent()
 
 	InputComponent->BindAction("SetDestination", IE_Pressed, this, &ATGJ_PlayerController::OnSetDestinationPressed);
 	InputComponent->BindAction("SetDestination", IE_Released, this, &ATGJ_PlayerController::OnSetDestinationReleased);
+
+	ATGJ_PlayerPawn* PlayerPawn = Cast<ATGJ_PlayerPawn>(GetPawn());
+	if(IsValid(PlayerPawn))
+	{
+		PlayerPawn->SetupGASInputs();
+	}
 }
 
 //=================================================================================================================

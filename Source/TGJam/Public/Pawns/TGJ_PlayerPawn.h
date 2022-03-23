@@ -36,11 +36,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components)
 	USceneComponent* RootSceneComponent;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components)
-	UAbilitySystemComponent* AbilitySystemComponent;
+	TWeakObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components)
-	UTGJ_AttributeSet* AttributeSet;
+	TWeakObjectPtr<UTGJ_AttributeSet> AttributeSet;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GameplayAbilities")
 	TArray<TSubclassOf<UTGJ_GameplayAbility>> StartingAbilities;
@@ -64,14 +62,11 @@ protected:
 
 	void SetupStartingEffects();
 
-	void SetupGASInputs();
+	virtual void OnRep_PlayerState() override;
 
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-
-	// Called to bind functionality to input
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	/** Returns TopDownCameraComponent subobject **/
 	FORCEINLINE UCameraComponent* GetTopDownCameraComponent() const { return TopDownCameraComponent; }
@@ -79,5 +74,7 @@ public:
 	FORCEINLINE USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 
 	/** Returns the ability system component to use for this actor. It may live on another actor, such as a Pawn using the PlayerState's component */
-	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponent; };
+	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponent.Get(); };
+
+	void SetupGASInputs();
 };

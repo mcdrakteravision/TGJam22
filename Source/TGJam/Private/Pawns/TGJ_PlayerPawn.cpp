@@ -6,6 +6,7 @@
 #include "AbilitySystemComponent.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "GameFramework/TGJ_PlayerState.h"
 #include "GameplayAbilitySystem/TGJ_AttributeSet.h"
 #include "GameplayAbilitySystem/TGJ_GameplayAbility.h"
 
@@ -37,12 +38,6 @@ ATGJ_PlayerPawn::ATGJ_PlayerPawn()
 	TopDownCameraComponent->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	TopDownCameraComponent->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
-	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
-	AbilitySystemComponent->ReplicationMode = EGameplayEffectReplicationMode::Full;
-	AbilitySystemComponent->SetIsReplicated(true);
-
-	AttributeSet = CreateDefaultSubobject<UTGJ_AttributeSet>(TEXT("AttributSet"));
-
 	bWereAbilitiesGiven = false;
 	bWereEffectsGiven = false;
 	bGASInputsBound = false;
@@ -60,19 +55,26 @@ void ATGJ_PlayerPawn::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
 
-	if(IsValid(AbilitySystemComponent))
+	ATGJ_PlayerState* MyPlayerState = GetPlayerState<ATGJ_PlayerState>();
+	if(IsValid(MyPlayerState))
 	{
-		SetupStartingAbilities();
-		SetupStartingEffects();
+		AbilitySystemComponent = MyPlayerState->GetAbilitySystemComponent();
+		if(AbilitySystemComponent.IsValid())
+		{
+			SetupStartingAbilities();
+			SetupStartingEffects();
 
-		AbilitySystemComponent->InitAbilityActorInfo(this, this);
+			AbilitySystemComponent->InitAbilityActorInfo(MyPlayerState, this);
+		}
+
+		AttributeSet = MyPlayerState->GetAttributeSet();
 	}
 }
 
 //=================================================================================================================
 void ATGJ_PlayerPawn::SetupStartingAbilities()
 {
-	if(!HasAuthority() || !IsValid(AbilitySystemComponent) || StartingAbilities.Num() <= 0 || bWereAbilitiesGiven)
+	if(!HasAuthority() || !AbilitySystemComponent.IsValid() || StartingAbilities.Num() <= 0 || bWereAbilitiesGiven)
 	{
 		return;
 	}
@@ -92,7 +94,7 @@ void ATGJ_PlayerPawn::SetupStartingAbilities()
 //=================================================================================================================
 void ATGJ_PlayerPawn::SetupStartingEffects()
 {
-	if(!HasAuthority() || !IsValid(AbilitySystemComponent) || StartingEffects.Num() <= 0 || bWereEffectsGiven)
+	if(!HasAuthority() || !AbilitySystemComponent.IsValid() || StartingEffects.Num() <= 0 || bWereEffectsGiven)
 	{
 		return;
 	}
@@ -105,7 +107,7 @@ void ATGJ_PlayerPawn::SetupStartingEffects()
 		FGameplayEffectSpecHandle NewHandle = AbilitySystemComponent->MakeOutgoingSpec(CurrentGameplayEffect, 1.f, EffectContext);
 		if (NewHandle.IsValid())
 		{
-			AbilitySystemComponent->ApplyGameplayEffectSpecToTarget(*NewHandle.Data.Get(), AbilitySystemComponent);
+			AbilitySystemComponent->ApplyGameplayEffectSpecToTarget(*NewHandle.Data.Get(), AbilitySystemComponent.Get());
 		}
 	}
 
@@ -113,14 +115,22 @@ void ATGJ_PlayerPawn::SetupStartingEffects()
 }
 
 //=================================================================================================================
-void ATGJ_PlayerPawn::SetupGASInputs()
+void ATGJ_PlayerPawn::OnRep_PlayerState()
 {
-	if(!IsValid(AbilitySystemComponent) || !IsValid(InputComponent) || bGASInputsBound)
-	{
-		return;
-	}
+	Super::OnRep_PlayerState();
 
-	AbilitySystemComponent->BindAbilityActivationToInputComponent(InputComponent, FGameplayAbilityInputBinds(FString("Confirm"), FString("Cancel"), FString("ETGJ_AbilityInputID"), static_cast<int32>(ETGJ_AbilityInput::Confirm), static_cast<int32>(ETGJ_AbilityInput::Cancel)));
+	ATGJ_PlayerState* MyPlayerState = GetPlayerState<ATGJ_PlayerState>();
+	if(IsValid(MyPlayerState))
+	{
+		AbilitySystemComponent = MyPlayerState->GetAbilitySystemComponent();
+		if(AbilitySystemComponent.IsValid())
+		{
+			AbilitySystemComponent->InitAbilityActorInfo(MyPlayerState, this);
+			SetupGASInputs();
+		}
+
+		AttributeSet = MyPlayerState->GetAttributeSet();
+	}
 }
 
 //=================================================================================================================
@@ -131,11 +141,13 @@ void ATGJ_PlayerPawn::Tick(float DeltaTime)
 }
 
 //=================================================================================================================
-// Called to bind functionality to input
-void ATGJ_PlayerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+void ATGJ_PlayerPawn::SetupGASInputs()
 {
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
+	if(!AbilitySystemComponent.IsValid() || !IsValid(InputComponent) || bGASInputsBound)
+	{
+		return;
+	}
 
-	SetupGASInputs();
+	AbilitySystemComponent->BindAbilityActivationToInputComponent(InputComponent, FGameplayAbilityInputBinds(FString("Confirm"), FString("Cancel"), FString("ETGJ_AbilityInputID"), static_cast<int32>(ETGJ_AbilityInput::Confirm), static_cast<int32>(ETGJ_AbilityInput::Cancel)));
 }
 
