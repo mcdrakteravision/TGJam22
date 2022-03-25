@@ -67,7 +67,7 @@ void ATGJ_PlayerController::SetupInputComponent()
 	ATGJ_PlayerPawn* PlayerPawn = Cast<ATGJ_PlayerPawn>(GetPawn());
 	if(IsValid(PlayerPawn))
 	{
-		PlayerPawn->SetupGASInputs();
+		PlayerPawn->SetupGASInputs(InputComponent);
 	}
 }
 
@@ -131,6 +131,17 @@ void ATGJ_PlayerController::OnMouseMovedWhilePressed()
 }
 
 //=================================================================================================================
+void ATGJ_PlayerController::Server_SetLastCursorLocation_Implementation(const FVector& LastCursorLocation)
+{
+	if(!IsValid(ProxyCharacterReference))
+	{
+		return;
+	}
+
+	ProxyCharacterReference->UpdateControllerLocationToGo(LastCursorLocation);
+}
+
+//=================================================================================================================
 void ATGJ_PlayerController::UpdateLocationAccordingToProxy(const float DeltaTime)
 {
 	if(!IsValid(ProxyCharacterReference) || !IsValid(GetPawn()))
@@ -140,15 +151,4 @@ void ATGJ_PlayerController::UpdateLocationAccordingToProxy(const float DeltaTime
 
 	const FVector InterpolatedLocation = UKismetMathLibrary::VInterpTo(GetPawn()->GetActorLocation(), ProxyCharacterReference->GetActorLocation(), DeltaTime, MouseMovementInterpolationSpeed);
 	GetPawn()->SetActorLocation(InterpolatedLocation);
-}
-
-//=================================================================================================================
-void ATGJ_PlayerController::Server_SetLastCursorLocation_Implementation(const FVector& LastCursorLocation)
-{
-	if(!IsValid(ProxyCharacterReference))
-	{
-		return;
-	}
-
-	ProxyCharacterReference->UpdateControllerLocationToGo(LastCursorLocation);
 }

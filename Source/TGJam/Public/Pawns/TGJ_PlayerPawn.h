@@ -14,6 +14,7 @@ class UAbilitySystemComponent;
 class UTGJ_AttributeSet;
 class UTGJ_GameplayAbility;
 class UGameplayEffect;
+class UInputComponent;
 
 UCLASS()
 class TGJAM_API ATGJ_PlayerPawn : public APawn, public IAbilitySystemInterface
@@ -76,5 +77,5 @@ public:
 	/** Returns the ability system component to use for this actor. It may live on another actor, such as a Pawn using the PlayerState's component */
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponent.Get(); };
 
-	void SetupGASInputs();
+	void SetupGASInputs(UInputComponent* InstigatorInputComponent);
 };

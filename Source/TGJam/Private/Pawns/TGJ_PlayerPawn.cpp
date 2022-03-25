@@ -83,8 +83,7 @@ void ATGJ_PlayerPawn::SetupStartingAbilities()
 	{
 		if (IsValid(StartupAbility))
 		{
-			AbilitySystemComponent->GiveAbility(
-				FGameplayAbilitySpec(StartupAbility, 1.f, static_cast<int32>(StartupAbility.GetDefaultObject()->AbilityInputID), this));
+			AbilitySystemComponent->GiveAbility(FGameplayAbilitySpec(StartupAbility, 1.f, static_cast<int32>(StartupAbility.GetDefaultObject()->AbilityInputID), this));
 		}
 	}
 
@@ -120,13 +119,13 @@ void ATGJ_PlayerPawn::OnRep_PlayerState()
 	Super::OnRep_PlayerState();
 
 	ATGJ_PlayerState* MyPlayerState = GetPlayerState<ATGJ_PlayerState>();
-	if(IsValid(MyPlayerState))
+	if(IsValid(MyPlayerState) && IsValid(GetController()))
 	{
 		AbilitySystemComponent = MyPlayerState->GetAbilitySystemComponent();
 		if(AbilitySystemComponent.IsValid())
 		{
 			AbilitySystemComponent->InitAbilityActorInfo(MyPlayerState, this);
-			SetupGASInputs();
+			SetupGASInputs(GetController()->InputComponent);
 		}
 
 		AttributeSet = MyPlayerState->GetAttributeSet();
@@ -141,13 +140,13 @@ void ATGJ_PlayerPawn::Tick(float DeltaTime)
 }
 
 //=================================================================================================================
-void ATGJ_PlayerPawn::SetupGASInputs()
+void ATGJ_PlayerPawn::SetupGASInputs(UInputComponent* InstigatorInputComponent)
 {
-	if(!AbilitySystemComponent.IsValid() || !IsValid(InputComponent) || bGASInputsBound)
+	if(!AbilitySystemComponent.IsValid() || !IsValid(InstigatorInputComponent) || bGASInputsBound)
 	{
 		return;
 	}
 
-	AbilitySystemComponent->BindAbilityActivationToInputComponent(InputComponent, FGameplayAbilityInputBinds(FString("Confirm"), FString("Cancel"), FString("ETGJ_AbilityInputID"), static_cast<int32>(ETGJ_AbilityInput::Confirm), static_cast<int32>(ETGJ_AbilityInput::Cancel)));
+	AbilitySystemComponent->BindAbilityActivationToInputComponent(InstigatorInputComponent, FGameplayAbilityInputBinds(FString("Confirm"), FString("Cancel"), FString("ETGJ_AbilityInput"), static_cast<int32>(ETGJ_AbilityInput::Confirm), static_cast<int32>(ETGJ_AbilityInput::Cancel)));
 }
 
